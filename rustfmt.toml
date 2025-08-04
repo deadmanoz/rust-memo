@@ -1,0 +1,39 @@
+edition = "2021"
+format_code_in_doc_comments = true
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"
+
+# Width and indentation
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+newline_style = "Auto"
+
+# Code style preferences
+use_field_init_shorthand = true
+use_try_shorthand = true
+match_arm_blocks = true
+force_multiline_blocks = false
+fn_single_line = false
+
+# Import and use statements
+merge_derives = true
+reorder_imports = true
+reorder_modules = true
+
+# Comments and documentation
+wrap_comments = true
+normalize_comments = true
+normalize_doc_attributes = true
+format_macro_matchers = true
+format_macro_bodies = true
+
+# Impl and trait formatting
+reorder_impl_items = true
+combine_control_expr = true
+overflow_delimited_expr = false
+
+# Chains and alignment
+chain_width = 60
+struct_lit_single_line = true
+enum_discrim_align_threshold = 20
