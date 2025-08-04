@@ -1,0 +1,113 @@
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # This is an optional setting that allows Claude to read CI results on PRs
+          additional_permissions: |
+            actions: read
+          
+          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # model: "claude-opus-4-20250514"
+          
+          # Allow Claude to run Rust and project-specific commands
+          allowed_tools: |
+            Bash(cargo build)
+            Bash(cargo build --release)
+            Bash(cargo test)
+            Bash(cargo test -- --nocapture)
+            Bash(cargo clippy)
+            Bash(cargo clippy -- -D warnings)
+            Bash(cargo fmt)
+            Bash(cargo fmt -- --check)
+            Bash(cargo doc)
+            Bash(cargo bench)
+            Bash(cargo check)
+            Bash(cargo tree)
+            Bash(cargo audit)
+          
+          # Custom instructions for the Bitcoin mempool project
+          custom_instructions: |
+            You are helping with a Rust-based Bitcoin mempool monitoring and analysis system. Key aspects:
+            
+            1. **Architecture**: The system connects to a NATS.io (which is serving protobuf of data collected 
+            from Bitcoin Core nodes via tracing points), and stores it in PostgreSQL.
+            In the future it may connect to multiple NATs.io servers.
+            
+            2. **Rust Best Practices**:
+               - Use tokio for async runtime
+               - Prefer Arc<RwLock<T>> for shared state in async contexts
+               - Use serde for JSON/protobuf serialization
+               - Implement proper error types with thiserror
+               - Use tracing crate for structured logging
+            
+            3. **Database Design**:
+               - Consider time-series optimizations for transaction data
+               - Use proper indexes for mempool queries
+               - Implement database migrations with sqlx or diesel
+            
+            4. **NATS.io Integration**:
+              - Use async-nats client
+              - Implement proper reconnection logic
+              - Consider message delivery guarantees
+              - Raise potential security issues (TLS configuration, authentication, message validation)
+            
+            5. **Bitcoin Specifics**:
+               - Understand mempool functionality and configuration options
+               - Understand transaction structure (inputs, outputs, fees)
+               - Handle reorgs and chain tips properly
+               - Consider RBF (Replace-By-Fee) transactions, Packages
+               - Track transaction lifecycle (pending → confirmed → removed)
+            
+            6. **Performance Considerations**:
+               - Batch database inserts for high-throughput scenarios
+               - Use connection pooling for PostgreSQL
+               - Implement proper backpressure handling
+               - Consider memory usage for large mempools
+               - Report on estimated table grow given various assumptions
+            
+            7. **Testing Strategy**:
+               - Unit test transaction parsing logic
+               - Integration test with test Bitcoin networks
+               - Mock NATS.io connections for testing
+               - Use proptest for property-based testing
+            
+            When reviewing code or answering questions, consider these aspects and provide Rust-idiomatic solutions.
+          
+          # Environment variables for testing
+          claude_env: |
+            RUST_LOG: debug
+            RUST_BACKTRACE: 1

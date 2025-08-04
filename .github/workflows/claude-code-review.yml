@@ -1,0 +1,89 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    # Focus on Rust source files and important config files
+    paths:
+      - "src/**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "**/*.proto"  # For protobuf definitions
+      - "migrations/**/*.sql"  # For database migrations
+      - ".github/workflows/*.yml"
+
+jobs:
+  claude-review:
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # model: "claude-opus-4-20250514"
+          
+          # Direct prompt for automated review (no @claude mention needed)
+          direct_prompt: |
+            Please review this Rust pull request for a Bitcoin mempool monitoring system. Focus on:
+
+            **Rust Code Quality:**
+            - Memory safety and proper use of ownership/borrowing
+            - Error handling with Result<T, E> and proper error propagation
+            - Use of async/await for network operations
+            - Proper use of lifetimes and generics where applicable
+            - Idiomatic Rust patterns and conventions
+            
+            **Bitcoin/Blockchain Specific:**
+            - Correct handling of Bitcoin transaction data structures
+            - Proper validation of transaction data
+            - Efficient data structure usage
+
+            **Postgres/Database:***
+            - Appropriate schema design including partitioning and denormalization
+            - Favour query performance over table size (within reason)
+            - Consider using BRIN indexes for time-series data
+            - Proper use of JSONB for flexible transaction metadata
+            
+            **System Design:**
+            - NATS.io message handling and protobuf serialization
+            - Database query performance (especially for time-series data)
+            - Concurrent access patterns for multi-node data collection
+            - Resource usage for long-running monitoring processes
+            
+            **Security:**
+            - Input validation for external data from Bitcoin nodes
+            - SQL injection prevention in database queries
+            - Safe handling of network data from NATS.io
+            
+            **Testing:**
+            - Unit tests for transaction parsing logic
+            - Integration tests for NATS.io communication
+            - Mock tests for Bitcoin Core interactions
+            
+            Be specific about Rust idioms and suggest performance optimizations for high-throughput transaction processing.
+
+          # Use sticky comments for iterative review
+          use_sticky_comment: true
+          
+          # Add Rust-specific tools
+          allowed_tools: "Bash(cargo build),Bash(cargo test),Bash(cargo clippy),Bash(cargo fmt -- --check),Bash(cargo check)"
