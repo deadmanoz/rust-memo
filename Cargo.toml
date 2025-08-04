@@ -1,0 +1,28 @@
+[package]
+name = "rust-memo"
+version = "0.1.0"
+edition = "2024"
+description = "Bitcoin mempool monitoring and transaction analysis system"
+license = "MIT" # or "Apache-2.0" or your preferred license
+repository = "https://github.com/deadmanoz/rust-memo"
+keywords = ["bitcoin", "mempool", "monitoring", "analysis"]
+categories = ["bitcoin"]
+
+[dependencies]
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+unimplemented = "warn"
+todo = "warn"
+
+# Allow certain lints that are too strict
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+multiple_crate_versions = "allow"

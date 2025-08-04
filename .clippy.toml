@@ -1,0 +1,21 @@
+# Complexity thresholds
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
+single-char-binding-names-threshold = 4
+
+# Security and correctness
+avoid-breaking-exported-api = false
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
+allow-dbg-in-tests = true
+allow-print-in-tests = true
+
+# Style preferences
+enum-variant-name-threshold = 3
+max-struct-bools = 3
+max-fn-params-bools = 3
+max-trait-bounds = 3
+
+# Documentation
+missing-docs-in-crate-items = true
