@@ -3,12 +3,14 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    # Focus on Rust source files and important config files
+    paths:
+      - "src/**/*.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "**/*.proto"  # For protobuf definitions
+      - "migrations/**/*.sql"  # For database migrations
+      - ".github/workflows/*.yml"
 
 jobs:
   claude-review:
@@ -42,37 +44,46 @@ jobs:
           
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            Please review this Rust pull request for a Bitcoin mempool monitoring system. Focus on:
+
+            **Rust Code Quality:**
+            - Memory safety and proper use of ownership/borrowing
+            - Error handling with Result<T, E> and proper error propagation
+            - Use of async/await for network operations
+            - Proper use of lifetimes and generics where applicable
+            - Idiomatic Rust patterns and conventions
             
-            Be constructive and helpful in your feedback.
+            **Bitcoin/Blockchain Specific:**
+            - Correct handling of Bitcoin transaction data structures
+            - Proper validation of transaction data
+            - Efficient data structure usage
 
-          # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
-          # use_sticky_comment: true
-          
-          # Optional: Customize review based on file types
-          # direct_prompt: |
-          #   Review this PR focusing on:
-          #   - For TypeScript files: Type safety and proper interface usage
-          #   - For API endpoints: Security, input validation, and error handling
-          #   - For React components: Performance, accessibility, and best practices
-          #   - For tests: Coverage, edge cases, and test quality
-          
-          # Optional: Different prompts for different authors
-          # direct_prompt: |
-          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' && 
-          #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
-          #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
-          
-          # Optional: Add specific tools for running tests or linting
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
-          
-          # Optional: Skip review for certain conditions
-          # if: |
-          #   !contains(github.event.pull_request.title, '[skip-review]') &&
-          #   !contains(github.event.pull_request.title, '[WIP]')
+            **Postgres/Database:***
+            - Appropriate schema design including partitioning and denormalization
+            - Favour query performance over table size (within reason)
+            - Consider using BRIN indexes for time-series data
+            - Proper use of JSONB for flexible transaction metadata
+            
+            **System Design:**
+            - NATS.io message handling and protobuf serialization
+            - Database query performance (especially for time-series data)
+            - Concurrent access patterns for multi-node data collection
+            - Resource usage for long-running monitoring processes
+            
+            **Security:**
+            - Input validation for external data from Bitcoin nodes
+            - SQL injection prevention in database queries
+            - Safe handling of network data from NATS.io
+            
+            **Testing:**
+            - Unit tests for transaction parsing logic
+            - Integration tests for NATS.io communication
+            - Mock tests for Bitcoin Core interactions
+            
+            Be specific about Rust idioms and suggest performance optimizations for high-throughput transaction processing.
 
+          # Use sticky comments for iterative review
+          use_sticky_comment: true
+          
+          # Add Rust-specific tools
+          allowed_tools: "Bash(cargo build),Bash(cargo test),Bash(cargo clippy),Bash(cargo fmt -- --check),Bash(cargo check)"
