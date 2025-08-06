@@ -1,0 +1,3 @@
+[submodule "peer-observer"]
+	path = peer-observer
+	url = https://github.com/deadmanoz/peer-observer.git
